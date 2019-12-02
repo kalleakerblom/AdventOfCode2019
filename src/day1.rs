@@ -24,7 +24,7 @@ mod tests {
     }
     #[test]
     fn day_1_part1() {
-        let mut buf = BufReader::new(File::open("input/day1").unwrap());
+        let buf = BufReader::new(File::open("input/day1").unwrap());
         let masses: Vec<u32> =
             buf.lines().map(|s| s.unwrap().parse::<u32>().unwrap()).collect();
         assert_eq!(total_fuel_count(&masses), 3372463);
@@ -35,7 +35,7 @@ mod tests {
     }
     #[test]
     fn day_1_part2() {
-        let mut buf = BufReader::new(File::open("input/day1").unwrap());
+        let buf = BufReader::new(File::open("input/day1").unwrap());
         let masses: Vec<u32> =
             buf.lines().map(|s| s.unwrap().parse::<u32>().unwrap()).collect();
         assert_eq!(total_recursive_fuel_count(&masses), 5055835);
