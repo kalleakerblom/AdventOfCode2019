@@ -1,14 +1,8 @@
 use std::collections::HashMap;
 fn find_intersect_distances(wire1: &str, wire2: &str) -> (u32, u32) {
     let mut wire_maps = Vec::new();
-    for wire in &[wire1, wire2] {
-        let mut pos = (0, 0);
-        let mut wire_map = HashMap::new();
-        wire_map.insert((0, 0), 0);
-        let mut count = 1;
-        for instruction in wire.split(',') {
-            draw_wire(instruction, &mut count, &mut wire_map, &mut pos);
-        }
+    for draw_instruction in &[wire1, wire2] {
+        let wire_map = draw_wire(draw_instruction);
         wire_maps.push(wire_map);
     }
     let ans1 = wire_maps[0]
@@ -28,44 +22,46 @@ fn find_intersect_distances(wire1: &str, wire2: &str) -> (u32, u32) {
     (ans1 as u32, ans2)
 }
 
-fn draw_wire(
-    draw: &str,
-    count: &mut u32,
-    map: &mut HashMap<(i32, i32), u32>,
-    pos: &mut (i32, i32),
-) {
-    let steps: i32 = draw[1..].parse().unwrap();
-    match &draw[0..1] {
-        "R" => {
-            for s in 1..=steps {
-                map.entry((pos.0 + s, pos.1)).or_insert(*count);
-                *count += 1;
+fn draw_wire(draws: &str) -> HashMap<(i32, i32), u32> {
+    let mut wire_map = HashMap::new();
+    wire_map.insert((0, 0), 0);
+    let mut pos = (0, 0);
+    let mut count = 1;
+    for draw in draws.split(',') {
+        let steps: i32 = draw[1..].parse().unwrap();
+        match &draw[0..1] {
+            "R" => {
+                for s in 1..=steps {
+                    wire_map.entry((pos.0 + s, pos.1)).or_insert(count);
+                    count += 1;
+                }
+                pos = (pos.0 + steps, pos.1);
             }
-            *pos = (pos.0 + steps, pos.1);
-        }
-        "L" => {
-            for s in 1..=steps {
-                map.entry((pos.0 - s, pos.1)).or_insert(*count);
-                *count += 1;
+            "L" => {
+                for s in 1..=steps {
+                    wire_map.entry((pos.0 - s, pos.1)).or_insert(count);
+                    count += 1;
+                }
+                pos = (pos.0 - steps, pos.1);
             }
-            *pos = (pos.0 - steps, pos.1);
-        }
-        "U" => {
-            for s in 1..=steps {
-                map.entry((pos.0, pos.1 + s)).or_insert(*count);
-                *count += 1;
+            "U" => {
+                for s in 1..=steps {
+                    wire_map.entry((pos.0, pos.1 + s)).or_insert(count);
+                    count += 1;
+                }
+                pos = (pos.0, pos.1 + steps);
             }
-            *pos = (pos.0, pos.1 + steps);
-        }
-        "D" => {
-            for s in 1..=steps {
-                map.entry((pos.0, pos.1 - s)).or_insert(*count);
-                *count += 1;
+            "D" => {
+                for s in 1..=steps {
+                    wire_map.entry((pos.0, pos.1 - s)).or_insert(count);
+                    count += 1;
+                }
+                pos = (pos.0, pos.1 - steps);
             }
-            *pos = (pos.0, pos.1 - steps);
+            bad => panic!("{}", bad),
         }
-        bad => panic!("{}", bad),
     }
+    wire_map
 }
 #[cfg(test)]
 mod tests {
