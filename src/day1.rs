@@ -20,24 +20,24 @@ mod tests {
     use std::io::{BufRead, BufReader};
     #[test]
     fn example_day1_part1() {
-        assert_eq!(total_fuel_count(&[100756]), 33583);
+        assert_eq!(total_fuel_count(&[100_756]), 33583);
     }
     #[test]
     fn day_1_part1() {
         let buf = BufReader::new(File::open("input/day1").unwrap());
         let masses: Vec<u32> =
             buf.lines().map(|s| s.unwrap().parse::<u32>().unwrap()).collect();
-        assert_eq!(total_fuel_count(&masses), 3372463);
+        assert_eq!(total_fuel_count(&masses), 3_372_463);
     }
     #[test]
     fn example_day1_part2() {
-        assert_eq!(total_recursive_fuel_count(&[100756]), 50346);
+        assert_eq!(total_recursive_fuel_count(&[100_756]), 50346);
     }
     #[test]
     fn day_1_part2() {
         let buf = BufReader::new(File::open("input/day1").unwrap());
         let masses: Vec<u32> =
             buf.lines().map(|s| s.unwrap().parse::<u32>().unwrap()).collect();
-        assert_eq!(total_recursive_fuel_count(&masses), 5055835);
+        assert_eq!(total_recursive_fuel_count(&masses), 5_055_835);
     }
 }
