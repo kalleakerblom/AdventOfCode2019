@@ -16,7 +16,7 @@ enum Op {
     Halt,
 }
 
-fn run_program(mut code: Vec<i32>, input: i32) -> Vec<i32> {
+fn run_program(code: &mut Vec<i32>, input: i32) -> Vec<i32> {
     let mut head = 0;
     let mut output = Vec::new();
     loop {
@@ -123,11 +123,13 @@ mod tests {
     use std::fs;
     #[test]
     fn example_day5_part1() {
-        assert_eq!(run_program(vec![1002, 4, 3, 4, 33], 1), vec![])
+        let mut program = vec![1002, 4, 3, 4, 33];
+        assert_eq!(run_program(&mut program, 1), vec![]);
+        assert_eq!(program, vec![1002, 4, 3, 4, 99]);
     }
     #[test]
     fn day5_part1_and_2() {
-        let program: Vec<i32> = fs::read_to_string("input/day5")
+        let mut program: Vec<i32> = fs::read_to_string("input/day5")
             .unwrap()
             .trim()
             .split(',')
@@ -135,10 +137,10 @@ mod tests {
             .collect();
         //part 1
         assert_eq!(
-            run_program(program.clone(), 1),
+            run_program(&mut program.clone(), 1),
             vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 15259545]
         );
         //part 2
-        assert_eq!(run_program(program.clone(), 5), vec![7616021]);
+        assert_eq!(run_program(&mut program, 5), vec![7616021]);
     }
 }
