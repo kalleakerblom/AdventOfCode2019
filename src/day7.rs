@@ -1,6 +1,7 @@
 #[derive(Debug)]
 enum Param {
     Pos(usize),
+    Rel(i32),
     Im(i32),
 }
 #[derive(Debug)]
@@ -13,63 +14,82 @@ enum Op {
     JumpFalse([Param; 2]),
     Less([Param; 3]),
     Equal([Param; 3]),
+    OffsetBase(Param),
     Halt,
 }
-fn run_program(
-    head: &mut usize,
-    code: &mut Vec<i32>,
-    mut input: Vec<i32>,
-) -> Option<i32> {
-    loop {
-        let op = parse_op(&code, *head);
-        let value = |p: Param| match p {
-            Param::Pos(pos) => code[pos],
-            Param::Im(im) => im,
-        };
-        match op {
-            Op::Add([p1, p2, Param::Pos(pos)]) => {
-                code[pos] = value(p1) + value(p2);
-                *head += 4;
-            }
-            Op::Mul([p1, p2, Param::Pos(pos)]) => {
-                code[pos] = value(p1) * value(p2);
-                *head += 4;
-            }
-            Op::In(Param::Pos(pos)) => {
-                code[pos] = input.pop().expect("missing input");
-                *head += 2;
-            }
-            Op::Out(param) => {
-                *head += 2;
-                return Some(value(param));
-            }
-            Op::JumpTrue([p1, p2]) => {
-                if value(p1) != 0 {
-                    *head = value(p2) as usize;
-                } else {
-                    *head += 3;
+struct Program {
+    head: usize,
+    code: Vec<i32>,
+    base: usize,
+}
+impl Program {
+    fn new(head: usize, code: Vec<i32>, base: usize) -> Self {
+        Program { head, code, base }
+    }
+    fn run(&mut self, input: i32) -> Option<i32> {
+        let mut input = Some(input);
+        loop {
+            let op = parse_op(&self.code, self.head);
+            let value = |p: Param| match p {
+                Param::Pos(pos) => self.code[pos],
+                Param::Im(im) => im,
+                Param::Rel(rel) => {
+                    let pos = (self.base as i32 + rel) as usize;
+                    self.code[pos]
                 }
-            }
-            Op::JumpFalse([p1, p2]) => {
-                if value(p1) == 0 {
-                    *head = value(p2) as usize;
-                } else {
-                    *head += 3;
+            };
+            match op {
+                Op::Add([p1, p2, Param::Pos(pos)]) => {
+                    self.code[pos] = value(p1) + value(p2);
+                    self.head += 4;
                 }
+                Op::Mul([p1, p2, Param::Pos(pos)]) => {
+                    self.code[pos] = value(p1) * value(p2);
+                    self.head += 4;
+                }
+                Op::In(Param::Pos(pos)) => {
+                    self.code[pos] = input.take()?;
+                    self.head += 2;
+                }
+                Op::Out(param) => {
+                    let out = value(param);
+                    self.head += 2;
+                    return Some(out);
+                }
+                Op::JumpTrue([p1, p2]) => {
+                    if value(p1) != 0 {
+                        self.head = value(p2) as usize;
+                    } else {
+                        self.head += 3;
+                    }
+                }
+                Op::JumpFalse([p1, p2]) => {
+                    if value(p1) == 0 {
+                        self.head = value(p2) as usize;
+                    } else {
+                        self.head += 3;
+                    }
+                }
+                Op::Less([p1, p2, Param::Pos(pos)]) => {
+                    self.code[pos] = if value(p1) < value(p2) { 1 } else { 0 };
+                    self.head += 4;
+                }
+                Op::Equal([p1, p2, Param::Pos(pos)]) => {
+                    self.code[pos] = if value(p1) == value(p2) { 1 } else { 0 };
+                    self.head += 4;
+                }
+                Op::OffsetBase(param) => {
+                    let offset = value(param);
+                    self.base = (self.base as i32 + offset) as usize;
+                    self.head += 2;
+                }
+                Op::Halt => return None,
+                _ => panic!("bad op"),
             }
-            Op::Less([p1, p2, Param::Pos(pos)]) => {
-                code[pos] = if value(p1) < value(p2) { 1 } else { 0 };
-                *head += 4;
-            }
-            Op::Equal([p1, p2, Param::Pos(pos)]) => {
-                code[pos] = if value(p1) == value(p2) { 1 } else { 0 };
-                *head += 4;
-            }
-            Op::Halt => return None,
-            _ => panic!("bad op"),
         }
     }
 }
+
 fn parse_op(code: &[i32], head: usize) -> Op {
     let op_code = code[head];
     let de = op_code % 100;
@@ -80,6 +100,7 @@ fn parse_op(code: &[i32], head: usize) -> Op {
     let make_param = |val, mode| match mode {
         0 => Param::Pos(val as usize),
         1 => Param::Im(val),
+        2 => Param::Rel(val),
         _ => panic!(),
     };
     match de {
@@ -114,25 +135,23 @@ fn parse_op(code: &[i32], head: usize) -> Op {
             make_param(code[head + 2], b),
             make_param(code[head + 3], a),
         ]),
-
+        9 => Op::OffsetBase(make_param(code[head + 1], c)),
         bad => panic!("bad op code ({}) at ({})", bad, head),
     }
 }
 fn run_program_chain(
-    input: i32,
-    heads: [&mut usize; 5],
-    amps: [&mut Vec<i32>; 5],
+    mut input: i32,
+    programs: &mut [&mut Program],
 ) -> Option<i32> {
-    let a_out = run_program(heads[0], amps[0], vec![input])?;
-    let b_out = run_program(heads[1], amps[1], vec![a_out])?;
-    let c_out = run_program(heads[2], amps[2], vec![b_out])?;
-    let d_out = run_program(heads[3], amps[3], vec![c_out])?;
-    run_program(heads[4], amps[4], vec![d_out])
+    for p in programs {
+        input = p.run(input)?;
+    }
+    Some(input)
 }
 #[cfg(test)]
 mod tests {
-    use super::run_program;
     use super::run_program_chain;
+    use super::Program;
     use itertools::Itertools;
     use std::cmp;
     use std::fs;
@@ -147,24 +166,24 @@ mod tests {
 
         let mut max_out = 0;
         for set in (0..5).permutations(5) {
-            let out_a =
-                run_program(&mut 0, &mut amp_code.clone(), vec![0, set[0]])
-                    .unwrap();
-            let out_b =
-                run_program(&mut 0, &mut amp_code.clone(), vec![out_a, set[1]])
-                    .unwrap();
-            let out_c =
-                run_program(&mut 0, &mut amp_code.clone(), vec![out_b, set[2]])
-                    .unwrap();
-            let out_d =
-                run_program(&mut 0, &mut amp_code.clone(), vec![out_c, set[3]])
-                    .unwrap();
-            let out_e =
-                run_program(&mut 0, &mut amp_code.clone(), vec![out_d, set[4]])
-                    .unwrap();
+            let mut prog_a = Program::new(0, amp_code.clone(), 0);
+            let mut prog_b = Program::new(0, amp_code.clone(), 0);
+            let mut prog_c = Program::new(0, amp_code.clone(), 0);
+            let mut prog_d = Program::new(0, amp_code.clone(), 0);
+            let mut prog_e = Program::new(0, amp_code.clone(), 0);
+            prog_a.run(set[0]);
+            prog_b.run(set[1]);
+            prog_c.run(set[2]);
+            prog_d.run(set[3]);
+            prog_e.run(set[4]);
+            let out_a = prog_a.run(0).unwrap();
+            let out_b = prog_b.run(out_a).unwrap();
+            let out_c = prog_c.run(out_b).unwrap();
+            let out_d = prog_d.run(out_c).unwrap();
+            let out_e = prog_e.run(out_d).unwrap();
             max_out = cmp::max(max_out, out_e);
         }
-        assert_eq!(max_out, 914828);
+        assert_eq!(max_out, 914_828);
     }
     #[test]
     fn day7_part2() {
@@ -177,54 +196,33 @@ mod tests {
         let mut max_out = 0;
 
         for set in (5..10).permutations(5) {
-            let mut amp_a = amp_code.clone();
-            let mut amp_b = amp_code.clone();
-            let mut amp_c = amp_code.clone();
-            let mut amp_d = amp_code.clone();
-            let mut amp_e = amp_code.clone();
-            let mut head_a = 0;
-            let mut head_b = 0;
-            let mut head_c = 0;
-            let mut head_d = 0;
-            let mut head_e = 0;
-            let out_a =
-                run_program(&mut head_a, &mut amp_a, vec![0, set[0]]).unwrap();
-            let out_b =
-                run_program(&mut head_b, &mut amp_b, vec![out_a, set[1]])
-                    .unwrap();
-            let out_c =
-                run_program(&mut head_c, &mut amp_c, vec![out_b, set[2]])
-                    .unwrap();
-            let out_d =
-                run_program(&mut head_d, &mut amp_d, vec![out_c, set[3]])
-                    .unwrap();
-            let out_e =
-                run_program(&mut head_e, &mut amp_e, vec![out_d, set[4]])
-                    .unwrap();
-            max_out = cmp::max(out_e, max_out);
-            let mut input = out_e;
-            loop {
-                if let Some(output) = run_program_chain(
-                    input,
-                    [
-                        &mut head_a,
-                        &mut head_b,
-                        &mut head_c,
-                        &mut head_d,
-                        &mut head_e,
-                    ],
-                    [
-                        &mut amp_a, &mut amp_b, &mut amp_c, &mut amp_d,
-                        &mut amp_e,
-                    ],
-                ) {
-                    input = output;
-                    max_out = cmp::max(output, max_out);
-                } else {
-                    break;
-                }
+            let mut prog_a = Program::new(0, amp_code.clone(), 0);
+            let mut prog_b = Program::new(0, amp_code.clone(), 0);
+            let mut prog_c = Program::new(0, amp_code.clone(), 0);
+            let mut prog_d = Program::new(0, amp_code.clone(), 0);
+            let mut prog_e = Program::new(0, amp_code.clone(), 0);
+            prog_a.run(set[0]);
+            prog_b.run(set[1]);
+            prog_c.run(set[2]);
+            prog_d.run(set[3]);
+            prog_e.run(set[4]);
+
+            let mut input = 0;
+
+            while let Some(output) = run_program_chain(
+                input,
+                &mut [
+                    &mut prog_a,
+                    &mut prog_b,
+                    &mut prog_c,
+                    &mut prog_d,
+                    &mut prog_e,
+                ],
+            ) {
+                input = output;
+                max_out = cmp::max(output, max_out);
             }
         }
-        dbg!(max_out);
+        assert_eq!(max_out, 17_956_613);
     }
 }
