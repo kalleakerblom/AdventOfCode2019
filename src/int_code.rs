@@ -21,12 +21,20 @@ pub struct Program {
     head: usize,
     code: Vec<i64>,
     base: usize,
+    input: Option<i64>,
 }
 impl Program {
     pub fn new(code: Vec<i64>) -> Self {
-        Program { head: 0, code, base: 0 }
+        Program { head: 0, code, base: 0, input: None }
     }
-    pub fn run(&mut self, mut input: Option<i64>) -> Option<i64> {
+    pub fn run_input(&mut self, input: Option<i64>) -> Option<i64> {
+        self.input = input;
+        self.run()
+    }
+    pub fn set_input(&mut self, input: Option<i64>) {
+        self.input = input;
+    }
+    pub fn run(&mut self) -> Option<i64> {
         loop {
             let op = parse_op(&self.code, self.head);
             let value = |p: Param| match p {
@@ -55,7 +63,7 @@ impl Program {
                 }
                 Op::In(param) => {
                     let pos = pos(param);
-                    self.code[pos] = input.take()?;
+                    self.code[pos] = self.input.take()?;
                     self.head += 2;
                 }
                 Op::Out(param) => {

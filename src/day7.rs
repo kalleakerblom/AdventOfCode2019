@@ -5,7 +5,7 @@ fn run_program_chain(
     programs: &mut [&mut Program],
 ) -> Option<i64> {
     for p in programs {
-        input = p.run(Some(input))?;
+        input = p.run_input(Some(input))?;
     }
     Some(input)
 }
@@ -32,16 +32,16 @@ mod tests {
             let mut prog_c = Program::new(amp_code.clone());
             let mut prog_d = Program::new(amp_code.clone());
             let mut prog_e = Program::new(amp_code.clone());
-            prog_a.run(Some(set[0]));
-            prog_b.run(Some(set[1]));
-            prog_c.run(Some(set[2]));
-            prog_d.run(Some(set[3]));
-            prog_e.run(Some(set[4]));
-            let out_a = prog_a.run(Some(0)).unwrap();
-            let out_b = prog_b.run(Some(out_a)).unwrap();
-            let out_c = prog_c.run(Some(out_b)).unwrap();
-            let out_d = prog_d.run(Some(out_c)).unwrap();
-            let out_e = prog_e.run(Some(out_d)).unwrap();
+            prog_a.run_input(Some(set[0]));
+            prog_b.run_input(Some(set[1]));
+            prog_c.run_input(Some(set[2]));
+            prog_d.run_input(Some(set[3]));
+            prog_e.run_input(Some(set[4]));
+            let out_a = prog_a.run_input(Some(0)).unwrap();
+            let out_b = prog_b.run_input(Some(out_a)).unwrap();
+            let out_c = prog_c.run_input(Some(out_b)).unwrap();
+            let out_d = prog_d.run_input(Some(out_c)).unwrap();
+            let out_e = prog_e.run_input(Some(out_d)).unwrap();
             max_out = cmp::max(max_out, out_e);
         }
         assert_eq!(max_out, 914_828);
@@ -62,11 +62,11 @@ mod tests {
             let mut prog_c = Program::new(amp_code.clone());
             let mut prog_d = Program::new(amp_code.clone());
             let mut prog_e = Program::new(amp_code.clone());
-            prog_a.run(Some(set[0]));
-            prog_b.run(Some(set[1]));
-            prog_c.run(Some(set[2]));
-            prog_d.run(Some(set[3]));
-            prog_e.run(Some(set[4]));
+            prog_a.run_input(Some(set[0]));
+            prog_b.run_input(Some(set[1]));
+            prog_c.run_input(Some(set[2]));
+            prog_d.run_input(Some(set[3]));
+            prog_e.run_input(Some(set[4]));
 
             let mut input = 0;
 

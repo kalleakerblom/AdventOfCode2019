@@ -31,12 +31,12 @@ impl Robot {
             Color::Black => 0,
             Color::White => 1,
         };
-        let paint = match self.program.run(Some(input))? {
+        let paint = match self.program.run_input(Some(input))? {
             0 => Color::Black,
             1 => Color::White,
             _ => panic!("invalid paint code"),
         };
-        let turn = match self.program.run(None)? {
+        let turn = match self.program.run_input(None)? {
             0 => Turn::Left,
             1 => Turn::Right,
             _ => panic!("invalid turn code"),
@@ -60,7 +60,7 @@ fn print_paint(paint_map: &HashMap<(i32, i32), Color>) {
         max_x = cmp::max(max_x, x);
         max_y = cmp::max(max_y, y);
     }
-    for y in min_y..=max_y {
+    for y in (min_y..=max_y).rev() {
         for x in min_x..=max_x {
             if let Some(Color::White) = paint_map.get(&(x, y)) {
                 print!("#");
@@ -137,6 +137,6 @@ mod tests {
             robot.step();
             camera_input = *painted.get(&robot.pos).unwrap_or(&Color::Black);
         }
-        print_paint(&painted); // It's upside down....
+        print_paint(&painted);
     }
 }
