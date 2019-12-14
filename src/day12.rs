@@ -138,7 +138,7 @@ mod tests {
         let mut m3 = Moon1D::new(-4);
         let m3_ = m3.clone();
 
-        for step in 1..300000 {
+        for step in 1..300_000 {
             let g0 = m0.calculate_gravity(&[&m1, &m2, &m3]);
             let g1 = m1.calculate_gravity(&[&m0, &m2, &m3]);
             let g2 = m2.calculate_gravity(&[&m1, &m0, &m3]);

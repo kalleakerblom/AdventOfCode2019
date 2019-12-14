@@ -138,9 +138,9 @@ mod tests {
         //part 1
         assert_eq!(
             run_program(&mut program.clone(), 1),
-            vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 15259545]
+            vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 15_259_545]
         );
         //part 2
-        assert_eq!(run_program(&mut program, 5), vec![7616021]);
+        assert_eq!(run_program(&mut program, 5), vec![7_616_021]);
     }
 }

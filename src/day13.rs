@@ -27,6 +27,7 @@ fn draw_display(display: &HashMap<(i64, i64), i64>) {
 }
 #[cfg(test)]
 mod tests {
+    #[allow(unused_imports)]
     use super::draw_display;
     use crate::int_code::Program;
     use std::collections::HashMap;
